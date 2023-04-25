@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	draftState "github.com/CJPotter10/sbs-drafts-api/draft-state"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
@@ -26,6 +27,9 @@ func main() {
 	r.Get("/", func( w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
 	})
+
+	dr := &draftState.DraftResources{}
+	r.Mount("/drafts", dr.Routes())
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
