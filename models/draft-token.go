@@ -73,6 +73,8 @@ func MintDraftTokenInDb(tokenId, ownerId string) error {
 		return err
 	}
 
+	fmt.Println("Adding this here so that I can update the file in git")
+
 	return nil
 }
 
