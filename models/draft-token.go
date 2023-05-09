@@ -9,16 +9,16 @@ import (
 )
 
 type DraftToken struct {
-	Roster      *Roster `json:"roster"`
-	DraftType   string  `json:"_draftType"`
-	CardId      string  `json:"_cardId"`
-	ImageUrl    string  `json:"_imageUrl"`
-	Level       string  `json:"_level"`
-	OwnerId     string  `json:"_ownerId"`
-	LeagueId    string  `json:"_leagueId"`
-	Rank        string  `json:"_rank"`
-	WeekScore   string  `json:"_weekScore"`
-	SeasonScore string  `json:"_seasonScore"`
+	Roster      Roster `json:"roster"`
+	DraftType   string `json:"_draftType"`
+	CardId      string `json:"_cardId"`
+	ImageUrl    string `json:"_imageUrl"`
+	Level       string `json:"_level"`
+	OwnerId     string `json:"_ownerId"`
+	LeagueId    string `json:"_leagueId"`
+	Rank        string `json:"_rank"`
+	WeekScore   string `json:"_weekScore"`
+	SeasonScore string `json:"_seasonScore"`
 }
 
 type Metadata struct {

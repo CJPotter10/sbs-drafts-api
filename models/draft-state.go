@@ -64,8 +64,8 @@ type Roster struct {
 	WR  []string `json:"WR"`
 }
 
-func NewEmptyRoster() *Roster {
-	return &Roster{
+func NewEmptyRoster() Roster {
+	return Roster{
 		DST: make([]string, 0),
 		QB:  make([]string, 0),
 		RB:  make([]string, 0),
