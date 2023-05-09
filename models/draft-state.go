@@ -7,12 +7,12 @@ import (
 )
 
 type DraftInfo struct {
-	DraftId				string 		`json:"draftId"`
-	CurrentDrafter		string		`json:"currentDrafter"`
-	CurrentPickNumber	int 		`json:"pickNumber"`
-	CurrentRound 		int 		`json:"roundNum"`
-	PickInRound			int 		`json:"pickInRound"`
-	DraftOrder 			[]string 	`json:"draftOrder"`
+	DraftId           string   `json:"draftId"`
+	CurrentDrafter    string   `json:"currentDrafter"`
+	CurrentPickNumber int      `json:"pickNumber"`
+	CurrentRound      int      `json:"roundNum"`
+	PickInRound       int      `json:"pickInRound"`
+	DraftOrder        []string `json:"draftOrder"`
 }
 
 func ReturnDraftInfoForDraft(draftId string) (*DraftInfo, error) {
@@ -27,7 +27,7 @@ func ReturnDraftInfoForDraft(draftId string) (*DraftInfo, error) {
 }
 
 type DraftSummary struct {
-	Summary 	[]PlayerStateInfo	`json:"summary"`
+	Summary []PlayerStateInfo `json:"summary"`
 }
 
 func ReturnDraftSummaryForDraft(draftId string) (*DraftSummary, error) {
@@ -42,7 +42,7 @@ func ReturnDraftSummaryForDraft(draftId string) (*DraftSummary, error) {
 }
 
 type ConnectionList struct {
-	List 	map[string]bool		`json:"list"`
+	List map[string]bool `json:"list"`
 }
 
 func ReturnConnectionListForDraft(draftId string) (*ConnectionList, error) {
@@ -57,15 +57,25 @@ func ReturnConnectionListForDraft(draftId string) (*ConnectionList, error) {
 }
 
 type Roster struct {
-	DST 	[]string	`json:"DST"`
-	QB 		[]string	`json:"QB"`
-	RB 		[]string	`json:"RB"`
-	TE 		[]string	`json:"TE"`
-	WR 		[]string	`json:"WR"`
+	DST []string `json:"DST"`
+	QB  []string `json:"QB"`
+	RB  []string `json:"RB"`
+	TE  []string `json:"TE"`
+	WR  []string `json:"WR"`
+}
+
+func NewEmptyRoster() *Roster {
+	return &Roster{
+		DST: make([]string, 0),
+		QB:  make([]string, 0),
+		RB:  make([]string, 0),
+		TE:  make([]string, 0),
+		WR:  make([]string, 0),
+	}
 }
 
 type RosterState struct {
-	Rosters 	map[string]Roster	`json:"rosters"`
+	Rosters map[string]Roster `json:"rosters"`
 }
 
 func ReturnRostersForDraft(draftId string) (*RosterState, error) {
@@ -94,9 +104,6 @@ func CreateLeagueDraftStateUponFilling(draftId string) error {
 	return nil
 
 	// 	IS NOT COMPLETE STILL WORK ON THIS AND COMPLETE IT
-
-
-
 
 	// PLEASE DON'T FORGET THIS
 

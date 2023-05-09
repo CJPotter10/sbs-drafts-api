@@ -21,20 +21,19 @@ func (dr *DraftResources) Routes() chi.Router {
 	return r
 }
 
-
 // will need to add the stats and analysis that needs to be shown to this route when we have that data
 func (dr *DraftResources) getPlayersMapWithRankings(w http.ResponseWriter, r *http.Request) {
 	ownerId := chi.URLParam(r, "ownerId")
 	draftId := chi.URLParam(r, "draftid")
 	if ownerId == "" || draftId == "" {
-		http.Error(w, "Did not find a draft Id or ownerid in this request so we are returning" , http.StatusInternalServerError)
+		http.Error(w, "Did not find a draft Id or ownerid in this request so we are returning", http.StatusBadRequest)
 		return
 	}
 
 	res, err := models.ReturnPlayerStateWithRankings(ownerId, draftId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return	
+		return
 	}
 
 	data, err := json.Marshal(res)
@@ -50,7 +49,6 @@ func (dr *DraftResources) getPlayersMapWithRankings(w http.ResponseWriter, r *ht
 		return
 	}
 }
-
 
 // needs to return draft info such as what pick we are on
 
@@ -109,7 +107,6 @@ func (dr *DraftResources) getDraftSummaryById(w http.ResponseWriter, r *http.Req
 	}
 }
 
-
 // returns map of connection list
 func (dr *DraftResources) getDraftConnectionList(w http.ResponseWriter, r *http.Request) {
 	draftId := chi.URLParam(r, "draftId")
@@ -165,5 +162,3 @@ func (dr *DraftResources) getRostersMapForDraft(w http.ResponseWriter, r *http.R
 		return
 	}
 }
-
-

@@ -2,16 +2,23 @@ package models
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/CJPotter10/sbs-drafts-api/utils"
 )
 
 type DraftToken struct {
-	Roster   Roster `json:"roster"`
-	CardId   string `json:"_cardId"`
-	ImageUrl string `json:"_imageUrl"`
-	Level    string `json:"_level"`
-	OwnerId  string `json:"_ownerId"`
+	Roster      *Roster `json:"roster"`
+	DraftType   string  `json:"_draftType"`
+	CardId      string  `json:"_cardId"`
+	ImageUrl    string  `json:"_imageUrl"`
+	Level       string  `json:"_level"`
+	OwnerId     string  `json:"_ownerId"`
+	LeagueId    string  `json:"_leagueId"`
+	Rank        string  `json:"_rank"`
+	WeekScore   string  `json:"_weekScore"`
+	SeasonScore string  `json:"_seasonScore"`
 }
 
 type Metadata struct {
@@ -26,58 +33,101 @@ type AttributeType struct {
 	Value string `json:"value"`
 }
 
+func MintDraftTokenInDb(tokenId, ownerId string) error {
+	tokenNum, err := strconv.Atoi(tokenId)
+	if err != nil {
+		return err
+	}
+
+	res, err := utils.Contract.GetOwnerOfToken(tokenNum)
+	if strings.ToLower(ownerId) != res {
+		return fmt.Errorf("the passed in ownerId does not match the ownerId returned from the smart contract for token %s: expected owner(%s) / actual owner(%s)", tokenId, ownerId, res)
+	}
+
+	// can hardcode the image to the draft token image we will use before the draft has been complete
+	draftToken := &DraftToken{
+		Roster:      NewEmptyRoster(),
+		DraftType:   "",
+		CardId:      tokenId,
+		ImageUrl:    "",
+		Level:       "Pro",
+		OwnerId:     ownerId,
+		LeagueId:    "",
+		Rank:        "N/A",
+		WeekScore:   "0",
+		SeasonScore: "0",
+	}
+
+	err = utils.Db.CreateOrUpdateDocument("draftTokens", tokenId, draftToken)
+	if err != nil {
+		return err
+	}
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/validDraftTokens", ownerId), tokenId, draftToken)
+	if err != nil {
+		return err
+	}
+
+	metadata := draftToken.ConvertToMetadata()
+	err = utils.Db.CreateOrUpdateDocument("draftTokenMetadata", tokenId, metadata)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (dt *DraftToken) ConvertToMetadata() *Metadata {
 	return &Metadata{
 		Description: "Our 10,000 Spoiled Banana Society Genesis Cards minted on the Ethereum blockchain doubles as your membership and gives you access to the Spoiled Banana Society benefits including playing each year in our SBS Genesis League with no further purchase necessary.",
 		Name:        fmt.Sprintf("SBS Draft Token %s", dt.CardId),
-		Image: 		 dt.ImageUrl,
-		Attributes: CreateTokenAttributes(dt),	
+		Image:       dt.ImageUrl,
+		Attributes:  CreateTokenAttributes(dt),
 	}
 }
 
 func CreateTokenAttributes(dt *DraftToken) []AttributeType {
-	res := make([]AttributeType, 0) 
+	res := make([]AttributeType, 0)
 	for i := 0; i < len(dt.Roster.QB); i++ {
 		obj := AttributeType{
-			Type: fmt.Sprintf("QB%x", i),
+			Type:  fmt.Sprintf("QB%x", i),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
-	} 
+	}
 	for i := 0; i < len(dt.Roster.RB); i++ {
 		obj := AttributeType{
-			Type: fmt.Sprintf("RB%x", i),
+			Type:  fmt.Sprintf("RB%x", i),
 			Value: dt.Roster.RB[i],
 		}
 		res = append(res, obj)
-	} 
+	}
 	for i := 0; i < len(dt.Roster.TE); i++ {
 		obj := AttributeType{
-			Type: fmt.Sprintf("TE%x", i),
+			Type:  fmt.Sprintf("TE%x", i),
 			Value: dt.Roster.TE[i],
 		}
 		res = append(res, obj)
-	} 
+	}
 	for i := 0; i < len(dt.Roster.WR); i++ {
 		obj := AttributeType{
-			Type: fmt.Sprintf("WR%x", i),
+			Type:  fmt.Sprintf("WR%x", i),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
-	} 
+	}
 	for i := 0; i < len(dt.Roster.DST); i++ {
 		obj := AttributeType{
-			Type: fmt.Sprintf("DST%x", i),
+			Type:  fmt.Sprintf("DST%x", i),
 			Value: dt.Roster.DST[i],
 		}
 		res = append(res, obj)
-	} 
+	}
 
 	levelTrait := AttributeType{
-		Type: "LEVEL",
+		Type:  "LEVEL",
 		Value: dt.Level,
 	}
-	
+
 	res = append(res, levelTrait)
 
 	return res
