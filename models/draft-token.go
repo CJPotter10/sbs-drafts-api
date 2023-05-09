@@ -127,8 +127,37 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 		Type:  "LEVEL",
 		Value: dt.Level,
 	}
-
 	res = append(res, levelTrait)
+
+	weekScoreTrait := AttributeType{
+		Type:  "WEEK SCORE",
+		Value: "0",
+	}
+	res = append(res, weekScoreTrait)
+
+	seasonScoreTrait := AttributeType{
+		Type:  "Season Score",
+		Value: "0",
+	}
+	res = append(res, seasonScoreTrait)
+
+	draftTypeTrait := AttributeType{
+		Type:  "DRAFT TYPE",
+		Value: "",
+	}
+	res = append(res, draftTypeTrait)
+
+	rankTrait := AttributeType{
+		Type:  "RANK",
+		Value: "N/A",
+	}
+	res = append(res, rankTrait)
+
+	leagueTrait := AttributeType{
+		Type:  "LEAGUE ID",
+		Value: "",
+	}
+	res = append(res, leagueTrait)
 
 	return res
 }
