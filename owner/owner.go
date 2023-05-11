@@ -1,6 +1,7 @@
 package owner
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -15,6 +16,10 @@ func (or *OwnerResources) Routes() chi.Router {
 
 	r.Post("/{ownerId}/draftToken/mint/min/{min}/max/{max}", or.CreateTokensInDatabase)
 	return r
+}
+
+type MintTokensResponse struct {
+	Tokens []models.DraftToken `json:"tokens"`
 }
 
 func (or *OwnerResources) CreateTokensInDatabase(w http.ResponseWriter, r *http.Request) {
@@ -34,13 +39,33 @@ func (or *OwnerResources) CreateTokensInDatabase(w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	for i := min; i < max; i++ {
+
+	tokens := make([]models.DraftToken, 0)
+	for i := min; i <= max; i++ {
 		tokenId := strconv.Itoa(i)
-		err := models.MintDraftTokenInDb(tokenId, ownerId)
+		token, err := models.MintDraftTokenInDb(tokenId, ownerId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		tokens = append(tokens, *token)
+	}
+
+	res := &MintTokensResponse{
+		Tokens: tokens,
+	}
+
+	data, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 }

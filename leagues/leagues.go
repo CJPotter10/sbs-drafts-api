@@ -21,15 +21,15 @@ func (lr *LeagueResources) Routes() chi.Router {
 }
 
 type JoinLeagueRequestBody struct {
-	NumLeaguesToJoin 	int 	`json:"numLeaguesToJoin"`
+	NumLeaguesToJoin int `json:"numLeaguesToJoin"`
 }
 
-//route to join draft league
+// route to join draft league
 func (lr *LeagueResources) joinDraftLeagues(w http.ResponseWriter, r *http.Request) {
 	ownerId := chi.URLParam(r, "ownerId")
 	draftType := chi.URLParam(r, "draftType")
-	if ownerId == "" || draftType == ""{
-		http.Error(w, "Did not find an ownerid in this request so we are returning" , http.StatusInternalServerError)
+	if ownerId == "" || draftType == "" {
+		http.Error(w, "Did not find an ownerid in this request so we are returning", http.StatusInternalServerError)
 		return
 	}
 
@@ -37,25 +37,25 @@ func (lr *LeagueResources) joinDraftLeagues(w http.ResponseWriter, r *http.Reque
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		fmt.Println("Error in decoding the request body for joining leagues")
-		http.Error(w, "Could not decode the request body into the correct data type so we are returning" , http.StatusInternalServerError)
+		http.Error(w, "Could not decode the request body into the correct data type so we are returning", http.StatusInternalServerError)
 		return
 	}
 
-	err = models.JoinLeagues(ownerId, req.NumLeaguesToJoin, draftType)
+	cards, err := models.JoinLeagues(ownerId, req.NumLeaguesToJoin, draftType)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, err.Error() , http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data, err := json.Marshal(req)
+	data, err := json.Marshal(cards)
 	if err != nil {
-		http.Error(w, err.Error() , http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(data)	
+	_, err = w.Write(data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -64,25 +64,25 @@ func (lr *LeagueResources) joinDraftLeagues(w http.ResponseWriter, r *http.Reque
 
 // route to leave draft league (make sure that the draft has not started or alread happened)
 type LeaveRequest struct {
-	OwnerId 	string 	`json:"ownerId"`
-	TokenId 	string 	`json:"tokenId"`
+	OwnerId string `json:"ownerId"`
+	TokenId string `json:"tokenId"`
 }
 
 func (lr *LeagueResources) RemoveUserFromDraft(w http.ResponseWriter, r *http.Request) {
 	draftId := chi.URLParam(r, "draftId")
-	
+
 	var req LeaveRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		fmt.Println("Error in decoding the request body for leaving league")
-		http.Error(w, err.Error() , http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	_, err = models.RemoveUserFromDraft(req.TokenId, req.OwnerId, draftId)
 	if err != nil {
 		fmt.Println("Error in decoding the request body for leaving league")
-		http.Error(w, err.Error() , http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -132,5 +132,3 @@ func (lr *LeagueResources) ReturnDraftToken(w http.ResponseWriter, r *http.Reque
 // route to return leaderboard for all of the draft leagues top scores for a gameweek
 
 // route to set their player rankings. This will be saved on the owner level not draft specific
-
-

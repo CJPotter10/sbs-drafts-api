@@ -7,12 +7,31 @@ import (
 )
 
 type DraftInfo struct {
-	DraftId           string   `json:"draftId"`
-	CurrentDrafter    string   `json:"currentDrafter"`
-	CurrentPickNumber int      `json:"pickNumber"`
-	CurrentRound      int      `json:"roundNum"`
-	PickInRound       int      `json:"pickInRound"`
-	DraftOrder        []string `json:"draftOrder"`
+	DraftId           string       `json:"draftId"`
+	CurrentDrafter    string       `json:"currentDrafter"`
+	CurrentPickNumber int          `json:"pickNumber"`
+	CurrentRound      int          `json:"roundNum"`
+	PickInRound       int          `json:"pickInRound"`
+	DraftOrder        []LeagueUser `json:"draftOrder"`
+}
+
+func CreateDraftInfoForDraft(draftId string, currentUsers []LeagueUser) (*DraftInfo, error) {
+	// draftOrder := make([]string, 10)
+
+	// for i := 0; i < len(currentUsers); i++ {
+	// 	draftOrder[i] = currentUsers[i].OwnerId
+	// }
+
+	res := &DraftInfo{
+		DraftId:           draftId,
+		CurrentDrafter:    currentUsers[0].OwnerId,
+		CurrentPickNumber: 1,
+		CurrentRound:      1,
+		PickInRound:       1,
+		DraftOrder:        currentUsers,
+	}
+
+	return res, nil
 }
 
 func ReturnDraftInfoForDraft(draftId string) (*DraftInfo, error) {
@@ -41,8 +60,25 @@ func ReturnDraftSummaryForDraft(draftId string) (*DraftSummary, error) {
 	return &sum, nil
 }
 
+func CreateDraftSummaryForDraft(draftId string) *DraftSummary {
+	return &DraftSummary{
+		Summary: make([]PlayerStateInfo, 0),
+	}
+}
+
 type ConnectionList struct {
 	List map[string]bool `json:"list"`
+}
+
+func CreateNewConnectionList(info DraftInfo) *ConnectionList {
+	res := make(map[string]bool)
+	for i := 0; i < len(info.DraftOrder); i++ {
+		res[info.DraftOrder[i].OwnerId] = false
+	}
+
+	return &ConnectionList{
+		List: res,
+	}
 }
 
 func ReturnConnectionListForDraft(draftId string) (*ConnectionList, error) {
@@ -78,6 +114,8 @@ type RosterState struct {
 	Rosters map[string]Roster `json:"rosters"`
 }
 
+func 
+
 func ReturnRostersForDraft(draftId string) (*RosterState, error) {
 	var data RosterState
 	collectionString := fmt.Sprintf("drafts/%s/state", draftId)
@@ -101,10 +139,16 @@ func CreateLeagueDraftStateUponFilling(draftId string) error {
 		return fmt.Errorf("there is not 10 users in this league so we can not make a draft state for an unfilled league")
 	}
 
+	info, err := CreateDraftInfoForDraft(draftId, leagueInfo.CurrentUsers)
+	if err != nil {
+		return err
+	}
+
+	summary := CreateDraftSummaryForDraft(draftId)
+	connList := CreateNewConnectionList(*info)
+
+
+
 	return nil
-
-	// 	IS NOT COMPLETE STILL WORK ON THIS AND COMPLETE IT
-
-	// PLEASE DON'T FORGET THIS
 
 }

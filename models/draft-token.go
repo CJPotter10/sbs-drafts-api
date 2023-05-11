@@ -9,16 +9,16 @@ import (
 )
 
 type DraftToken struct {
-	Roster      Roster `json:"roster"`
-	DraftType   string `json:"_draftType"`
-	CardId      string `json:"_cardId"`
-	ImageUrl    string `json:"_imageUrl"`
-	Level       string `json:"_level"`
-	OwnerId     string `json:"_ownerId"`
-	LeagueId    string `json:"_leagueId"`
-	Rank        string `json:"_rank"`
-	WeekScore   string `json:"_weekScore"`
-	SeasonScore string `json:"_seasonScore"`
+	Roster      *Roster `json:"roster"`
+	DraftType   string  `json:"_draftType"`
+	CardId      string  `json:"_cardId"`
+	ImageUrl    string  `json:"_imageUrl"`
+	Level       string  `json:"_level"`
+	OwnerId     string  `json:"_ownerId"`
+	LeagueId    string  `json:"_leagueId"`
+	Rank        string  `json:"_rank"`
+	WeekScore   string  `json:"_weekScore"`
+	SeasonScore string  `json:"_seasonScore"`
 }
 
 type Metadata struct {
@@ -33,15 +33,15 @@ type AttributeType struct {
 	Value string `json:"value"`
 }
 
-func MintDraftTokenInDb(tokenId, ownerId string) error {
+func MintDraftTokenInDb(tokenId, ownerId string) (*DraftToken, error) {
 	tokenNum, err := strconv.Atoi(tokenId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	res, err := utils.Contract.GetOwnerOfToken(tokenNum)
 	if strings.ToLower(ownerId) != res {
-		return fmt.Errorf("the passed in ownerId does not match the ownerId returned from the smart contract for token %s: expected owner(%s) / actual owner(%s)", tokenId, ownerId, res)
+		return nil, fmt.Errorf("the passed in ownerId does not match the ownerId returned from the smart contract for token %s: expected owner(%s) / actual owner(%s)", tokenId, ownerId, res)
 	}
 
 	// can hardcode the image to the draft token image we will use before the draft has been complete
@@ -60,22 +60,22 @@ func MintDraftTokenInDb(tokenId, ownerId string) error {
 
 	err = utils.Db.CreateOrUpdateDocument("draftTokens", tokenId, draftToken)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/validDraftTokens", ownerId), tokenId, draftToken)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	metadata := draftToken.ConvertToMetadata()
 	err = utils.Db.CreateOrUpdateDocument("draftTokenMetadata", tokenId, metadata)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Adding this here so that I can update the file in git")
 
-	return nil
+	return draftToken, nil
 }
 
 func (dt *DraftToken) ConvertToMetadata() *Metadata {
@@ -169,5 +169,29 @@ func (token *DraftToken) GetDraftTokenFromDraftById(tokenId, draftId string) err
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (token *DraftToken) updateInUseDraftTokenInDatabase() error {
+	err := utils.Db.CreateOrUpdateDocument("draftTokens", token.CardId, token)
+	if err != nil {
+		return err
+	}
+
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/usedDraftTokens", token.OwnerId), token.CardId, token)
+	if err != nil {
+		return err
+	}
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/cards", token.LeagueId), token.CardId, token)
+	if err != nil {
+		return err
+	}
+
+	metadata := token.ConvertToMetadata()
+	err = utils.Db.CreateOrUpdateDocument("draftTokenMetadata", token.CardId, metadata)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
