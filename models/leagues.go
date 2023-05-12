@@ -154,6 +154,13 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 		return -1, err
 	}
 
+	if l.NumPlayers == 10 {
+		err := CreateLeagueDraftStateUponFilling(draftId)
+		if err != nil {
+			return -1, err
+		}
+	}
+
 	return currentDraftNum, nil
 }
 

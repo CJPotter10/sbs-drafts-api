@@ -45,6 +45,15 @@ func ReturnDraftInfoForDraft(draftId string) (*DraftInfo, error) {
 	return &info, nil
 }
 
+func (info *DraftInfo) Update(draftId string) error {
+	err := utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "info", info)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type DraftSummary struct {
 	Summary []PlayerStateInfo `json:"summary"`
 }
@@ -64,6 +73,15 @@ func CreateDraftSummaryForDraft(draftId string) *DraftSummary {
 	return &DraftSummary{
 		Summary: make([]PlayerStateInfo, 0),
 	}
+}
+
+func (s *DraftSummary) Update(draftId string) error {
+	err := utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "summary", s)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type ConnectionList struct {
@@ -92,6 +110,15 @@ func ReturnConnectionListForDraft(draftId string) (*ConnectionList, error) {
 	return &cl, nil
 }
 
+func (connList *ConnectionList) Update(draftId string) error {
+	err := utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "connectionList", connList)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type Roster struct {
 	DST []string `json:"DST"`
 	QB  []string `json:"QB"`
@@ -100,8 +127,8 @@ type Roster struct {
 	WR  []string `json:"WR"`
 }
 
-func NewEmptyRoster() Roster {
-	return Roster{
+func NewEmptyRoster() *Roster {
+	return &Roster{
 		DST: make([]string, 0),
 		QB:  make([]string, 0),
 		RB:  make([]string, 0),
@@ -111,10 +138,20 @@ func NewEmptyRoster() Roster {
 }
 
 type RosterState struct {
-	Rosters map[string]Roster `json:"rosters"`
+	Rosters map[string]*Roster `json:"rosters"`
 }
 
-func 
+func CreateEmptyRosterState(info DraftInfo) *RosterState {
+	data := make(map[string]*Roster)
+
+	for i := 0; i < len(info.DraftOrder); i++ {
+		data[info.DraftOrder[i].OwnerId] = NewEmptyRoster()
+	}
+
+	return &RosterState{
+		Rosters: data,
+	}
+}
 
 func ReturnRostersForDraft(draftId string) (*RosterState, error) {
 	var data RosterState
@@ -125,6 +162,15 @@ func ReturnRostersForDraft(draftId string) (*RosterState, error) {
 	}
 
 	return &data, nil
+}
+
+func (rs *RosterState) Update(draftId string) error {
+	err := utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "rosters", rs)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func CreateLeagueDraftStateUponFilling(draftId string) error {
@@ -143,11 +189,22 @@ func CreateLeagueDraftStateUponFilling(draftId string) error {
 	if err != nil {
 		return err
 	}
+	if err := info.Update(draftId); err != nil {
+		return err
+	}
 
 	summary := CreateDraftSummaryForDraft(draftId)
+	if err := summary.Update(draftId); err != nil {
+		return err
+	}
 	connList := CreateNewConnectionList(*info)
-
-
+	if err := connList.Update(draftId); err != nil {
+		return err
+	}
+	rosterMap := CreateEmptyRosterState(*info)
+	if err := rosterMap.Update(draftId); err != nil {
+		return err
+	}
 
 	return nil
 
