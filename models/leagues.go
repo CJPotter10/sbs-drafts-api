@@ -42,7 +42,7 @@ func CreateLeague(ownerId string, draftNum int, draftType string) (*League, erro
 		LeagueId:     fmt.Sprintf("%s-draft-%x", draftType, draftNum),
 		DisplayName:  fmt.Sprintf("SBS %s Draft League #%x", draftType, draftNum),
 		CurrentUsers: make([]LeagueUser, 0),
-		NumPlayers:   1,
+		NumPlayers:   0,
 		MaxPlayers:   10,
 		StartDate:    time.Date(2023, time.September, 3, 0, 0, 0, 0, loc),
 		EndDate:      time.Date(2023, time.December, 25, 0, 0, 0, 0, loc),

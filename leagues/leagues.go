@@ -15,7 +15,7 @@ func (lr *LeagueResources) Routes() chi.Router {
 	r := chi.NewRouter()
 
 	r.Post("/{draftType}/owner/{ownerId}", lr.joinDraftLeagues)
-	r.Post("{draftId}/actions/leave", lr.RemoveUserFromDraft)
+	r.Post("/{draftId}/actions/leave", lr.RemoveUserFromDraft)
 	r.Get("/{draftId}/cards/{tokenId}", lr.ReturnDraftToken)
 	return r
 }
