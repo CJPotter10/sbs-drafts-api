@@ -12,13 +12,12 @@ import (
 )
 
 type DatabaseConn struct {
-	Client 		*firestore.Client
+	Client *firestore.Client
 }
 
 var Db *DatabaseConn
 
 type any = interface{}
-
 
 //var client *db.Client
 
@@ -26,20 +25,22 @@ func NewDatabaseClient() {
 	ctx := context.Background()
 	creds, err := getFirebaseCreds()
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
 	conf := option.WithCredentialsJSON(creds)
-	app, err := firebase.NewApp(ctx, nil, conf);
+	app, err := firebase.NewApp(ctx, nil, conf)
+	if err != nil {
+
+		panic(err)
+	}
+
+	client, err := app.Firestore(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	client, err := app.Firestore(ctx);
-	if err != nil {
-		panic(err)
-	}
-	
-	Db = &DatabaseConn{client} 	
+	Db = &DatabaseConn{client}
 }
 
 func getFirebaseCreds() ([]byte, error) {
