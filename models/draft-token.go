@@ -1,9 +1,8 @@
 package models
 
 import (
+	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/CJPotter10/sbs-drafts-api/utils"
 )
@@ -21,6 +20,42 @@ type DraftToken struct {
 	SeasonScore string  `json:"_seasonScore"`
 }
 
+type UsersTokens struct {
+	Available []DraftToken `json:"available"`
+	Active    []DraftToken `json:"active"`
+}
+
+func ReturnAllDraftTokensForOwner(ownerId string) (*UsersTokens, error) {
+	res := &UsersTokens{
+		Available: make([]DraftToken, 0),
+		Active:    make([]DraftToken, 0),
+	}
+
+	data, err := utils.Db.Client.Collection(fmt.Sprintf("owners/%s/validDraftTokens", ownerId)).Documents(context.Background()).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(data); i++ {
+		var token DraftToken
+		data[i].DataTo(&token)
+		res.Available = append(res.Available, token)
+	}
+
+	data, err = utils.Db.Client.Collection(fmt.Sprintf("owners/%s/usedDraftTokens", ownerId)).Documents(context.Background()).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(data); i++ {
+		var token DraftToken
+		data[i].DataTo(&token)
+		res.Active = append(res.Active, token)
+	}
+
+	return res, nil
+}
+
 type Metadata struct {
 	Description string          `json:"description"`
 	Name        string          `json:"name"`
@@ -34,15 +69,15 @@ type AttributeType struct {
 }
 
 func MintDraftTokenInDb(tokenId, ownerId string) (*DraftToken, error) {
-	tokenNum, err := strconv.Atoi(tokenId)
-	if err != nil {
-		return nil, err
-	}
+	// tokenNum, err := strconv.Atoi(tokenId)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	res, err := utils.Contract.GetOwnerOfToken(tokenNum)
-	if strings.ToLower(ownerId) != res {
-		return nil, fmt.Errorf("the passed in ownerId does not match the ownerId returned from the smart contract for token %s: expected owner(%s) / actual owner(%s)", tokenId, ownerId, res)
-	}
+	// res, err := utils.Contract.GetOwnerOfToken(tokenNum)
+	// if strings.ToLower(ownerId) != res {
+	// 	return nil, fmt.Errorf("the passed in ownerId does not match the ownerId returned from the smart contract for token %s: expected owner(%s) / actual owner(%s)", tokenId, ownerId, res)
+	// }
 
 	// can hardcode the image to the draft token image we will use before the draft has been complete
 	draftToken := &DraftToken{
@@ -58,7 +93,7 @@ func MintDraftTokenInDb(tokenId, ownerId string) (*DraftToken, error) {
 		SeasonScore: "0",
 	}
 
-	err = utils.Db.CreateOrUpdateDocument("draftTokens", tokenId, draftToken)
+	err := utils.Db.CreateOrUpdateDocument("draftTokens", tokenId, draftToken)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +107,6 @@ func MintDraftTokenInDb(tokenId, ownerId string) (*DraftToken, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Adding this here so that I can update the file in git")
 
 	return draftToken, nil
 }
