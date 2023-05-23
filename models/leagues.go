@@ -33,7 +33,7 @@ type DraftLeagueTracker struct {
 }
 
 func CreateLeague(ownerId string, draftNum int, draftType string) (*League, error) {
-	loc, err := time.LoadLocation("America/Los_Angoles")
+	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		fmt.Println("Error finding the chicago timezone or location")
 		return nil, err
@@ -127,6 +127,10 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 			}
 		}
 
+		if len(l.CurrentUsers) == 10 {
+			isValid = false
+		}
+
 		if isValid {
 			break
 		}
@@ -192,6 +196,19 @@ func RemoveUserFromDraft(tokenId string, ownerId string, draftId string) (bool, 
 	l.NumPlayers--
 
 	err = utils.Db.CreateOrUpdateDocument("drafts", draftId, l)
+	if err != nil {
+		return false, err
+	}
+
+	var token DraftToken
+	err = utils.Db.ReadDocument("draftTokens", tokenId, &token)
+	if err != nil {
+		return false, err
+	}
+
+	token.LeagueId = ""
+
+	err = token.RemoveTokenFromLeague()
 	if err != nil {
 		return false, err
 	}

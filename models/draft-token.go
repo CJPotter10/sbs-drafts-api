@@ -228,3 +228,35 @@ func (token *DraftToken) updateInUseDraftTokenInDatabase() error {
 
 	return nil
 }
+
+func (token *DraftToken) RemoveTokenFromLeague() error {
+	token.LeagueId = ""
+	err := utils.Db.CreateOrUpdateDocument("draftTokens", token.CardId, token)
+	if err != nil {
+		return err
+	}
+
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/validDraftTokens", token.OwnerId), token.CardId, token)
+	if err != nil {
+		return err
+	}
+
+	err = utils.Db.DeleteDocument(fmt.Sprintf("owners/%s/usedDraftTokens", token.OwnerId), token.CardId)
+	if err != nil {
+		return err
+	}
+
+	err = utils.Db.DeleteDocument(fmt.Sprintf("drafts/%s/cards", token.LeagueId), token.CardId)
+	if err != nil {
+		return err
+	}
+
+	metadata := token.ConvertToMetadata()
+	err = utils.Db.CreateOrUpdateDocument("draftTokenMetadata", token.CardId, metadata)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}

@@ -2,12 +2,16 @@ package models
 
 import (
 	"fmt"
+	"math/rand"
+	"strings"
+	"time"
 
 	"github.com/CJPotter10/sbs-drafts-api/utils"
 )
 
 type DraftInfo struct {
 	DraftId           string       `json:"draftId"`
+	DraftStartTime    time.Time    `json:"draftStartTime"`
 	CurrentDrafter    string       `json:"currentDrafter"`
 	CurrentPickNumber int          `json:"pickNumber"`
 	CurrentRound      int          `json:"roundNum"`
@@ -15,23 +19,56 @@ type DraftInfo struct {
 	DraftOrder        []LeagueUser `json:"draftOrder"`
 }
 
-func CreateDraftInfoForDraft(draftId string, currentUsers []LeagueUser) (*DraftInfo, error) {
-	// draftOrder := make([]string, 10)
+func CreateDraftInfoForDraft(draftId, draftType string, currentUsers []LeagueUser) (*DraftInfo, error) {
 
-	// for i := 0; i < len(currentUsers); i++ {
-	// 	draftOrder[i] = currentUsers[i].OwnerId
-	// }
+	draftOrder := make([]LeagueUser, len(currentUsers))
+	rand.Seed(time.Now().UTC().UnixNano())
+	perm := rand.Perm(len(currentUsers))
+
+	for i, v := range perm {
+		draftOrder[i] = currentUsers[v]
+	}
+
+	var startTime time.Time
+
+	if strings.ToLower(draftType) == "live" {
+		startTime = time.Now().Add(1 * time.Minute)
+	} else {
+		res, err := findTheNextSaturday()
+		if err != nil {
+			return nil, err
+		}
+		startTime = res
+	}
 
 	res := &DraftInfo{
 		DraftId:           draftId,
+		DraftStartTime:    startTime,
 		CurrentDrafter:    currentUsers[0].OwnerId,
 		CurrentPickNumber: 1,
 		CurrentRound:      1,
 		PickInRound:       1,
-		DraftOrder:        currentUsers,
+		DraftOrder:        draftOrder,
 	}
 
 	return res, nil
+}
+
+func findTheNextSaturday() (time.Time, error) {
+	now := time.Now()
+	year := now.Year()
+	month := now.Month()
+	day := 6
+	hour := 18
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		fmt.Println("Error finding the LA timezone or location")
+		return time.Time{}, err
+	}
+
+	startTime := time.Date(year, month, day, hour, 0, 0, 0, loc)
+	return startTime, nil
+
 }
 
 func ReturnDraftInfoForDraft(draftId string) (*DraftInfo, error) {
@@ -185,7 +222,7 @@ func CreateLeagueDraftStateUponFilling(draftId string) error {
 		return fmt.Errorf("there is not 10 users in this league so we can not make a draft state for an unfilled league")
 	}
 
-	info, err := CreateDraftInfoForDraft(draftId, leagueInfo.CurrentUsers)
+	info, err := CreateDraftInfoForDraft(draftId, leagueInfo.DraftType, leagueInfo.CurrentUsers)
 	if err != nil {
 		return err
 	}

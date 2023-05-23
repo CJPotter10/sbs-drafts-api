@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/CJPotter10/sbs-drafts-api/utils"
 )
@@ -24,47 +25,33 @@ type PlayerStateInfo struct {
 }
 
 type StateMap struct {
-	Players 	map[string]PlayerStateInfo
+	Players map[string]PlayerStateInfo
 }
 
 type PlayerRanking struct {
-	PlayerId 		string
-	Ranking 		int
+	PlayerId string
+	Ranking  int
+	Score    int
 }
 
 type UserRankings struct {
-	Rankings 	[]PlayerRanking
+	Rankings []PlayerRanking
 }
 
 type DraftPlayerRanking struct {
 	// unique player Id will probably just be the team and position such as BUFQB
-	PlayerId 		string 	`json:"playerId"`
-	// display name for front end
-	DisplayName 	string 	`json:"displayName"`
-	// team of the player
-	Team 			string 	`json:"team"`
-	// position of player
-	Position 		string 	`json:"position"`
-	// address of the user who drafted this player
-	OwnerAddress 	string 	`json:"ownerAddress"`
-	// number pick that this player was selected.... will default to nil in the database
-	PickNum 		int 	`json:"pickNum"`
-	// the round which this player was drafted in
-	Round 			int 	`json:"round"`
-	// rank for the user from mapping rankings onto the players state
-	Ranking 		int		`json:"rank"`
+	PlayerId string `json:"playerId"`
+	// holds the state object for player
+	PlayerStateInfo PlayerStateInfo `json:"playerStateInfo"`
+	Stats           StatsObject     `json:"stats"`
+	Ranking         PlayerRanking   `json:"ranking"`
 }
 
-func CreateRankingObject(rank int, info PlayerStateInfo) DraftPlayerRanking {
+func CreateRankingObject(ranking PlayerRanking, stats StatsObject, info PlayerStateInfo) DraftPlayerRanking {
 	return DraftPlayerRanking{
-		PlayerId: info.PlayerId,
-		DisplayName: info.DisplayName,
-		Team: info.Team,
-		Position: info.Position,
-		OwnerAddress: info.OwnerAddress,
-		PickNum: info.PickNum,
-		Round: info.Round,
-		Ranking: rank,
+		PlayerStateInfo: info,
+		Stats:           stats,
+		Ranking:         ranking,
 	}
 }
 
@@ -72,9 +59,30 @@ func GetUserRankings(ownerId string) (*UserRankings, error) {
 	var r UserRankings
 	err := utils.Db.ReadDocument(fmt.Sprintf("owners/%s/drafts", ownerId), "rankings", &r)
 	if err != nil {
-		return nil, err
+		if strings.Contains(strings.ToLower(err.Error()), "notfound") {
+			err := utils.Db.ReadDocument("playerStats2023", "rankings", &r)
+			if err != nil {
+				return nil, err
+			}
+
+			err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/drafts", ownerId), "rankings", r)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	return &r, nil
+}
+
+type StatsObject struct {
+	PlayerId     string `json:"playerId"`
+	AverageScore int    `json:"averageScore"`
+	HighestScore int    `json:"highestScore"`
+	Top5Finishes int    `json:"top5Finishes"`
+}
+
+type StatsMap struct {
+	PlayerStats map[string]StatsObject `json:"players"`
 }
 
 func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]DraftPlayerRanking, error) {
@@ -89,14 +97,17 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]D
 		return nil, err
 	}
 
+	var stats StatsMap
+	err = utils.Db.ReadDocument("playerStats2023", "playerMap", &stats)
+	if err != nil {
+		return nil, err
+	}
+
 	res := make(map[string]DraftPlayerRanking)
 
 	for _, rank := range userRankings.Rankings {
-		res[rank.PlayerId] = CreateRankingObject(rank.Ranking, state.Players[rank.PlayerId])
+		res[rank.PlayerId] = CreateRankingObject(rank, stats.PlayerStats[rank.PlayerId], state.Players[rank.PlayerId])
 	}
-	
+
 	return res, nil
 }
-
-
-

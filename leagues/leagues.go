@@ -130,5 +130,3 @@ func (lr *LeagueResources) ReturnDraftToken(w http.ResponseWriter, r *http.Reque
 // route to return the leaderboard for draft leagues
 
 // route to return leaderboard for all of the draft leagues top scores for a gameweek
-
-// route to set their player rankings. This will be saved on the owner level not draft specific

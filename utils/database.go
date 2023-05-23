@@ -98,3 +98,14 @@ func (db *DatabaseConn) ReturnNumOfDocumentsInCollection(collection string) (int
 
 	return len(data), nil
 }
+
+func (db *DatabaseConn) DeleteDocument(collection, documentId string) error {
+	ctx := context.Background()
+
+	_, err := db.Client.Collection(collection).Doc(documentId).Delete(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

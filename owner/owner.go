@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/CJPotter10/sbs-drafts-api/models"
+	"github.com/CJPotter10/sbs-drafts-api/utils"
 	"github.com/go-chi/chi"
 )
 
@@ -16,6 +17,7 @@ func (or *OwnerResources) Routes() chi.Router {
 	r := chi.NewRouter()
 
 	r.Post("/{ownerId}/draftToken/mint/min/{min}/max/{max}", or.CreateTokensInDatabase)
+	r.Post("/{ownerId}/drafts/state/rankings", or.UpdateUserRankings)
 	r.Get("/{ownerId}/draftToken/all", or.ReturnTokensOwnedByUser)
 	return r
 }
@@ -103,4 +105,40 @@ func (or *OwnerResources) ReturnTokensOwnedByUser(w http.ResponseWriter, r *http
 		return
 	}
 
+}
+
+func (or *OwnerResources) UpdateUserRankings(w http.ResponseWriter, r *http.Request) {
+	ownerId := chi.URLParam(r, "ownerId")
+	if ownerId == "" {
+		http.Error(w, "Did not find an ownerId in the url path", http.StatusInternalServerError)
+		return
+	}
+
+	var newRankings models.UserRankings
+	err := json.NewDecoder(r.Body).Decode(&newRankings)
+	if err != nil {
+		fmt.Println("Error in decoding the request body for updating this users rankings")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/drafts", ownerId), "rankings", newRankings)
+	if err != nil {
+		fmt.Println("error in updating the owners rankings in the db")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(newRankings)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

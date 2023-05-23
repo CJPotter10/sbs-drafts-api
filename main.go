@@ -35,7 +35,7 @@ func main() {
 	})
 
 	dr := &draftState.DraftResources{}
-	r.Mount("/drafts", dr.Routes())
+	r.Mount("/draft", dr.Routes())
 
 	lr := &leagues.LeagueResources{}
 	r.Mount("/league", lr.Routes())
