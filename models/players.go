@@ -35,7 +35,7 @@ type PlayerRanking struct {
 }
 
 type UserRankings struct {
-	Rankings []PlayerRanking
+	Rankings []PlayerRanking `json:"rankings"`
 }
 
 type DraftPlayerRanking struct {

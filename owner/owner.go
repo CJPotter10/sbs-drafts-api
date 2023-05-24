@@ -19,6 +19,7 @@ func (or *OwnerResources) Routes() chi.Router {
 	r.Post("/{ownerId}/draftToken/mint/min/{min}/max/{max}", or.CreateTokensInDatabase)
 	r.Post("/{ownerId}/drafts/state/rankings", or.UpdateUserRankings)
 	r.Get("/{ownerId}/draftToken/all", or.ReturnTokensOwnedByUser)
+	r.Get("/{ownerId}/rankings/get", or.ReturnUserRankings)
 	return r
 }
 
@@ -133,6 +134,59 @@ func (or *OwnerResources) UpdateUserRankings(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+type GetRankingsResponse struct {
+	PlayerId string             `json:"playerId"`
+	Rank     int                `json:"rank"`
+	Score    int                `json:"score"`
+	Stats    models.StatsObject `json:"stats"`
+}
+
+func (or *OwnerResources) ReturnUserRankings(w http.ResponseWriter, r *http.Request) {
+	ownerId := chi.URLParam(r, "ownerId")
+	if ownerId == "" {
+		http.Error(w, "Did not find an ownerId in the url path", http.StatusInternalServerError)
+		return
+	}
+
+	res, err := models.GetUserRankings(ownerId)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	var stats models.StatsMap
+	err = utils.Db.ReadDocument("playerStats2023", "playerMap", &stats)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := make([]GetRankingsResponse, 0)
+
+	for i := 0; i < len(res.Rankings); i++ {
+		obj := GetRankingsResponse{
+			PlayerId: res.Rankings[i].PlayerId,
+			Rank:     res.Rankings[i].Ranking,
+			Score:    res.Rankings[i].Score,
+			Stats:    stats.PlayerStats[res.Rankings[i].PlayerId],
+		}
+		response = append(response, obj)
+	}
+
+	data, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
