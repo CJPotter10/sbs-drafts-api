@@ -29,13 +29,13 @@ type StateMap struct {
 }
 
 type PlayerRanking struct {
-	PlayerId string
-	Ranking  int
-	Score    int
+	PlayerId string  `json:"playerId"`
+	Rank     int64   `json:"rank"`
+	Score    float64 `json:"score"`
 }
 
 type UserRankings struct {
-	Rankings []PlayerRanking `json:"rankings"`
+	Ranking []PlayerRanking `json:"ranking"`
 }
 
 type DraftPlayerRanking struct {
@@ -56,10 +56,13 @@ func CreateRankingObject(ranking PlayerRanking, stats StatsObject, info PlayerSt
 }
 
 func GetUserRankings(ownerId string) (*UserRankings, error) {
-	var r UserRankings
+	r := UserRankings{
+		Ranking: make([]PlayerRanking, 0),
+	}
 	err := utils.Db.ReadDocument(fmt.Sprintf("owners/%s/drafts", ownerId), "rankings", &r)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "notfound") {
+		if ok := strings.Contains(strings.ToLower(err.Error()), "notfound"); ok {
+			fmt.Println("Made it into the if statement")
 			err := utils.Db.ReadDocument("playerStats2023", "rankings", &r)
 			if err != nil {
 				return nil, err
@@ -70,19 +73,30 @@ func GetUserRankings(ownerId string) (*UserRankings, error) {
 				return nil, err
 			}
 		}
+	} else if len(r.Ranking) == 0 {
+		fmt.Println("made it into the second if statement")
+		err := utils.Db.ReadDocument("playerStats2023", "rankings", &r)
+		if err != nil {
+			return nil, err
+		}
+
+		err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("owners/%s/drafts", ownerId), "rankings", r)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &r, nil
 }
 
 type StatsObject struct {
-	PlayerId     string `json:"playerId"`
-	AverageScore int    `json:"averageScore"`
-	HighestScore int    `json:"highestScore"`
-	Top5Finishes int    `json:"top5Finishes"`
+	PlayerId     string  `json:"playerId"`
+	AverageScore float64 `json:"averageScore"`
+	HighestScore float64 `json:"highestScore"`
+	Top5Finishes int64   `json:"top5Finishes"`
 }
 
 type StatsMap struct {
-	PlayerStats map[string]StatsObject `json:"players"`
+	Players map[string]StatsObject `json:"players"`
 }
 
 func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]DraftPlayerRanking, error) {
@@ -91,13 +105,17 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]D
 		return nil, err
 	}
 
-	var state StateMap
+	state := StateMap{
+		Players: make(map[string]PlayerStateInfo),
+	}
 	err = utils.Db.ReadDocument(fmt.Sprintf("drafts/%s/state", draftId), "players", &state)
 	if err != nil {
 		return nil, err
 	}
 
-	var stats StatsMap
+	stats := StatsMap{
+		Players: make(map[string]StatsObject),
+	}
 	err = utils.Db.ReadDocument("playerStats2023", "playerMap", &stats)
 	if err != nil {
 		return nil, err
@@ -105,8 +123,8 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]D
 
 	res := make(map[string]DraftPlayerRanking)
 
-	for _, rank := range userRankings.Rankings {
-		res[rank.PlayerId] = CreateRankingObject(rank, stats.PlayerStats[rank.PlayerId], state.Players[rank.PlayerId])
+	for _, rank := range userRankings.Ranking {
+		res[rank.PlayerId] = CreateRankingObject(rank, stats.Players[rank.PlayerId], state.Players[rank.PlayerId])
 	}
 
 	return res, nil

@@ -71,7 +71,10 @@ func (db *DatabaseConn) ReadDocument(collection string, documentId string, v any
 		return fmt.Errorf("error when reading document at %s/%s with an error of: %v", collection, documentId, err)
 	}
 
-	snapshot.DataTo(v)
+	err = snapshot.DataTo(v)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

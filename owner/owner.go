@@ -146,8 +146,8 @@ func (or *OwnerResources) UpdateUserRankings(w http.ResponseWriter, r *http.Requ
 
 type GetRankingsResponse struct {
 	PlayerId string             `json:"playerId"`
-	Rank     int                `json:"rank"`
-	Score    int                `json:"score"`
+	Rank     int64              `json:"rank"`
+	Score    float64            `json:"score"`
 	Stats    models.StatsObject `json:"stats"`
 }
 
@@ -162,23 +162,32 @@ func (or *OwnerResources) ReturnUserRankings(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	var stats models.StatsMap
+	fmt.Println(res)
+	stats := models.StatsMap{
+		Players: make(map[string]models.StatsObject),
+	}
 	err = utils.Db.ReadDocument("playerStats2023", "playerMap", &stats)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	//fmt.Println(stats.Players)
+
+	//fmt.Println(len(res.Ranking))
+	//fmt.Println(stats.Players["PHI-QB"])
 
 	response := make([]GetRankingsResponse, 0)
 
-	for i := 0; i < len(res.Rankings); i++ {
+	for i := 0; i < len(res.Ranking); i++ {
+		fmt.Printf("ranking stuff: %v, stats: %v", res.Ranking[i], stats.Players[res.Ranking[i].PlayerId])
 		obj := GetRankingsResponse{
-			PlayerId: res.Rankings[i].PlayerId,
-			Rank:     res.Rankings[i].Ranking,
-			Score:    res.Rankings[i].Score,
-			Stats:    stats.PlayerStats[res.Rankings[i].PlayerId],
+			PlayerId: res.Ranking[i].PlayerId,
+			Rank:     res.Ranking[i].Rank,
+			Score:    res.Ranking[i].Score,
+			Stats:    stats.Players[res.Ranking[i].PlayerId],
 		}
 		response = append(response, obj)
 	}
