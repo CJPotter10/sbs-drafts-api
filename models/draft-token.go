@@ -230,7 +230,9 @@ func (token *DraftToken) updateInUseDraftTokenInDatabase() error {
 }
 
 func (token *DraftToken) RemoveTokenFromLeague() error {
+	oldLeagueId := token.LeagueId
 	token.LeagueId = ""
+	token.DraftType = ""
 	err := utils.Db.CreateOrUpdateDocument("draftTokens", token.CardId, token)
 	if err != nil {
 		return err
@@ -243,11 +245,14 @@ func (token *DraftToken) RemoveTokenFromLeague() error {
 
 	err = utils.Db.DeleteDocument(fmt.Sprintf("owners/%s/usedDraftTokens", token.OwnerId), token.CardId)
 	if err != nil {
+		fmt.Println("error when deleting document in owners")
 		return err
 	}
 
-	err = utils.Db.DeleteDocument(fmt.Sprintf("drafts/%s/cards", token.LeagueId), token.CardId)
+	fmt.Println(fmt.Sprintf("drafts/%s/cards/%s", oldLeagueId, token.CardId))
+	err = utils.Db.DeleteDocument(fmt.Sprintf("drafts/%s/cards", oldLeagueId), token.CardId)
 	if err != nil {
+		fmt.Println("error when deleting token from draft league: ", err)
 		return err
 	}
 

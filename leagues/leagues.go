@@ -70,6 +70,9 @@ type LeaveRequest struct {
 
 func (lr *LeagueResources) RemoveUserFromDraft(w http.ResponseWriter, r *http.Request) {
 	draftId := chi.URLParam(r, "draftId")
+	if draftId == "" {
+
+	}
 
 	var req LeaveRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -81,7 +84,7 @@ func (lr *LeagueResources) RemoveUserFromDraft(w http.ResponseWriter, r *http.Re
 
 	_, err = models.RemoveUserFromDraft(req.TokenId, req.OwnerId, draftId)
 	if err != nil {
-		fmt.Println("Error in decoding the request body for leaving league")
+		fmt.Println("Error in removing user from league")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -206,8 +206,6 @@ func RemoveUserFromDraft(tokenId string, ownerId string, draftId string) (bool, 
 		return false, err
 	}
 
-	token.LeagueId = ""
-
 	err = token.RemoveTokenFromLeague()
 	if err != nil {
 		return false, err

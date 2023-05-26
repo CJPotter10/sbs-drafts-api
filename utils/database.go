@@ -105,8 +105,13 @@ func (db *DatabaseConn) ReturnNumOfDocumentsInCollection(collection string) (int
 func (db *DatabaseConn) DeleteDocument(collection, documentId string) error {
 	ctx := context.Background()
 
-	_, err := db.Client.Collection(collection).Doc(documentId).Delete(ctx)
+	docRef := db.Client.Collection(collection).Doc(documentId)
+	if docRef == nil {
+		fmt.Println("doc ref was nil")
+	}
+	_, err := docRef.Delete(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
