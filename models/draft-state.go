@@ -11,6 +11,7 @@ import (
 
 type DraftInfo struct {
 	DraftId           string       `json:"draftId"`
+	DisplayName       string       `json:"displayName"`
 	DraftStartTime    time.Time    `json:"draftStartTime"`
 	CurrentDrafter    string       `json:"currentDrafter"`
 	CurrentPickNumber int          `json:"pickNumber"`
@@ -44,7 +45,7 @@ func CreateDraftInfoForDraft(draftId, draftType string, currentUsers []LeagueUse
 	res := &DraftInfo{
 		DraftId:           draftId,
 		DraftStartTime:    startTime,
-		CurrentDrafter:    currentUsers[0].OwnerId,
+		CurrentDrafter:    draftOrder[0].OwnerId,
 		CurrentPickNumber: 1,
 		CurrentRound:      1,
 		PickInRound:       1,
@@ -201,6 +202,17 @@ func ReturnRostersForDraft(draftId string) (*RosterState, error) {
 	return &data, nil
 }
 
+func GetDefaultPlayerState() (map[string]PlayerStateInfo, error) {
+	data := make(map[string]PlayerStateInfo)
+
+	err := utils.Db.ReadDocument("playerStats2023", "defaultPlayerDraftState", &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (rs *RosterState) Update(draftId string) error {
 	err := utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "rosters", rs)
 	if err != nil {
@@ -210,11 +222,38 @@ func (rs *RosterState) Update(draftId string) error {
 	return nil
 }
 
-func CreateLeagueDraftStateUponFilling(draftId string) error {
+func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 	var leagueInfo League
 	err := utils.Db.ReadDocument("drafts", draftId, &leagueInfo)
 	if err != nil {
 		fmt.Println("Error in reading the league document")
+		return err
+	}
+
+	var counts DraftLeagueTracker
+	err = utils.Db.ReadDocument("drafts", "draftTracker", &counts)
+	if err != nil {
+		fmt.Println("Error in reading the draft tracker document into objects")
+		return err
+	}
+
+	if s := strings.ToLower(draftType); s == "live" {
+		counts.CurrentLiveDraftCount++
+		counts.FilledLeaguesCount++
+	} else {
+		counts.CurrentScheduledDraftCount++
+		counts.FilledLeaguesCount++
+	}
+
+	leagueInfo.DisplayName = fmt.Sprintf("League %x", counts.FilledLeaguesCount)
+
+	err = utils.Db.CreateOrUpdateDocument("drafts", draftId, &leagueInfo)
+	if err != nil {
+		return err
+	}
+
+	err = utils.Db.CreateOrUpdateDocument("drafts", "draftTracker", counts)
+	if err != nil {
 		return err
 	}
 
@@ -227,6 +266,15 @@ func CreateLeagueDraftStateUponFilling(draftId string) error {
 		return err
 	}
 	if err := info.Update(draftId); err != nil {
+		return err
+	}
+
+	playerState, err := GetDefaultPlayerState()
+	if err != nil {
+		return err
+	}
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", playerState)
+	if err != nil {
 		return err
 	}
 

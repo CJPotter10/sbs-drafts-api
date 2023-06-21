@@ -30,6 +30,7 @@ type LeagueUser struct {
 type DraftLeagueTracker struct {
 	CurrentLiveDraftCount      int `json:"currentLiveDraftCount"`
 	CurrentScheduledDraftCount int `json:"currentScheduledDraftCount"`
+	FilledLeaguesCount         int `json:"filledLeaguesCount"`
 }
 
 func CreateLeague(ownerId string, draftNum int, draftType string) (*League, error) {
@@ -159,7 +160,7 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 	}
 
 	if l.NumPlayers == 10 {
-		err := CreateLeagueDraftStateUponFilling(draftId)
+		err := CreateLeagueDraftStateUponFilling(draftId, draftType)
 		if err != nil {
 			return -1, err
 		}

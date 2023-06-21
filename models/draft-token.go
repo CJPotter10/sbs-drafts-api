@@ -8,16 +8,17 @@ import (
 )
 
 type DraftToken struct {
-	Roster      *Roster `json:"roster"`
-	DraftType   string  `json:"_draftType"`
-	CardId      string  `json:"_cardId"`
-	ImageUrl    string  `json:"_imageUrl"`
-	Level       string  `json:"_level"`
-	OwnerId     string  `json:"_ownerId"`
-	LeagueId    string  `json:"_leagueId"`
-	Rank        string  `json:"_rank"`
-	WeekScore   string  `json:"_weekScore"`
-	SeasonScore string  `json:"_seasonScore"`
+	Roster            *Roster `json:"roster"`
+	DraftType         string  `json:"_draftType"`
+	CardId            string  `json:"_cardId"`
+	ImageUrl          string  `json:"_imageUrl"`
+	Level             string  `json:"_level"`
+	OwnerId           string  `json:"_ownerId"`
+	LeagueId          string  `json:"_leagueId"`
+	LeagueDisplayName string  `json:"_leagueDisplayName"`
+	Rank              string  `json:"_rank"`
+	WeekScore         string  `json:"_weekScore"`
+	SeasonScore       string  `json:"_seasonScore"`
 }
 
 type UsersTokens struct {
@@ -81,16 +82,17 @@ func MintDraftTokenInDb(tokenId, ownerId string) (*DraftToken, error) {
 
 	// can hardcode the image to the draft token image we will use before the draft has been complete
 	draftToken := &DraftToken{
-		Roster:      NewEmptyRoster(),
-		DraftType:   "",
-		CardId:      tokenId,
-		ImageUrl:    "",
-		Level:       "Pro",
-		OwnerId:     ownerId,
-		LeagueId:    "",
-		Rank:        "N/A",
-		WeekScore:   "0",
-		SeasonScore: "0",
+		Roster:            NewEmptyRoster(),
+		DraftType:         "",
+		CardId:            tokenId,
+		ImageUrl:          "",
+		Level:             "Pro",
+		OwnerId:           ownerId,
+		LeagueId:          "",
+		LeagueDisplayName: "",
+		Rank:              "N/A",
+		WeekScore:         "0",
+		SeasonScore:       "0",
 	}
 
 	err := utils.Db.CreateOrUpdateDocument("draftTokens", tokenId, draftToken)
@@ -166,31 +168,25 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 
 	weekScoreTrait := AttributeType{
 		Type:  "WEEK SCORE",
-		Value: "0",
+		Value: dt.WeekScore,
 	}
 	res = append(res, weekScoreTrait)
 
 	seasonScoreTrait := AttributeType{
 		Type:  "Season Score",
-		Value: "0",
+		Value: dt.SeasonScore,
 	}
 	res = append(res, seasonScoreTrait)
 
-	draftTypeTrait := AttributeType{
-		Type:  "DRAFT TYPE",
-		Value: "",
-	}
-	res = append(res, draftTypeTrait)
-
 	rankTrait := AttributeType{
 		Type:  "RANK",
-		Value: "N/A",
+		Value: dt.Rank,
 	}
 	res = append(res, rankTrait)
 
 	leagueTrait := AttributeType{
-		Type:  "LEAGUE ID",
-		Value: "",
+		Type:  "LEAGUE NAME",
+		Value: dt.LeagueDisplayName,
 	}
 	res = append(res, leagueTrait)
 

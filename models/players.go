@@ -99,7 +99,7 @@ type StatsMap struct {
 	Players map[string]StatsObject `json:"players"`
 }
 
-func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]DraftPlayerRanking, error) {
+func ReturnPlayerStateWithRankings(ownerId string, draftId string) ([]DraftPlayerRanking, error) {
 	userRankings, err := GetUserRankings(ownerId)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]D
 	state := StateMap{
 		Players: make(map[string]PlayerStateInfo),
 	}
-	err = utils.Db.ReadDocument(fmt.Sprintf("drafts/%s/state", draftId), "players", &state)
+	err = utils.Db.ReadDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", &state)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +121,11 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) (map[string]D
 		return nil, err
 	}
 
-	res := make(map[string]DraftPlayerRanking)
+	res := make([]DraftPlayerRanking, 0)
 
 	for _, rank := range userRankings.Ranking {
-		res[rank.PlayerId] = CreateRankingObject(rank, stats.Players[rank.PlayerId], state.Players[rank.PlayerId])
+		obj := CreateRankingObject(rank, stats.Players[rank.PlayerId], state.Players[rank.PlayerId])
+		res = append(res, obj)
 	}
 
 	return res, nil

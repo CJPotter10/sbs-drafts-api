@@ -13,7 +13,7 @@ type DraftResources struct{}
 func (dr *DraftResources) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/{draftId}/rankings/{ownerId}", dr.getPlayersMapWithRankings)
+	r.Get("/{draftId}/playerState/{ownerId}", dr.getPlayersMapWithRankings)
 	r.Get("/{draftId}/state/info", dr.getDraftInfoById)
 	r.Get("/{draftId}/state/summary", dr.getDraftSummaryById)
 	r.Get("/{draftId}/state/connectionList", dr.getDraftConnectionList)
@@ -24,9 +24,13 @@ func (dr *DraftResources) Routes() chi.Router {
 // will need to add the stats and analysis that needs to be shown to this route when we have that data
 func (dr *DraftResources) getPlayersMapWithRankings(w http.ResponseWriter, r *http.Request) {
 	ownerId := chi.URLParam(r, "ownerId")
-	draftId := chi.URLParam(r, "draftid")
-	if ownerId == "" || draftId == "" {
-		http.Error(w, "Did not find a draft Id or ownerid in this request so we are returning", http.StatusBadRequest)
+	draftId := chi.URLParam(r, "draftId")
+	if ownerId == "" {
+		http.Error(w, "Did not find an ownerId in this request so we are returning", http.StatusBadRequest)
+		return
+	}
+	if draftId == "" {
+		http.Error(w, "Did not find an draftId in this request so we are returning", http.StatusBadRequest)
 		return
 	}
 
