@@ -2,6 +2,7 @@ package draftState
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/CJPotter10/sbs-drafts-api/models"
@@ -39,6 +40,8 @@ func (dr *DraftResources) getPlayersMapWithRankings(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println("first entry of the array: ", res[0])
 
 	data, err := json.Marshal(res)
 	if err != nil {

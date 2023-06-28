@@ -131,14 +131,14 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 		if len(l.CurrentUsers) == 10 {
 			isValid = false
 		}
-
+		currentDraftNum++
 		if isValid {
 			break
 		}
-		currentDraftNum++
+
 	}
 
-	token.LeagueId = draftId
+	token.LeagueId = l.DisplayName
 	token.DraftType = draftType
 
 	l.CurrentUsers = append(l.CurrentUsers, LeagueUser{OwnerId: token.OwnerId, TokenId: token.CardId})

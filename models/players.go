@@ -49,6 +49,7 @@ type DraftPlayerRanking struct {
 
 func CreateRankingObject(ranking PlayerRanking, stats StatsObject, info PlayerStateInfo) DraftPlayerRanking {
 	return DraftPlayerRanking{
+		PlayerId:        info.PlayerId,
 		PlayerStateInfo: info,
 		Stats:           stats,
 		Ranking:         ranking,
@@ -100,17 +101,19 @@ type StatsMap struct {
 }
 
 func ReturnPlayerStateWithRankings(ownerId string, draftId string) ([]DraftPlayerRanking, error) {
+	fmt.Println("Inside of returnPlayerStateWIthRankins")
 	userRankings, err := GetUserRankings(ownerId)
 	if err != nil {
 		return nil, err
 	}
 
-	state := StateMap{
-		Players: make(map[string]PlayerStateInfo),
-	}
+	state := make(map[string]PlayerStateInfo)
 	err = utils.Db.ReadDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", &state)
 	if err != nil {
 		return nil, err
+	}
+	if len(state) == 0 {
+		fmt.Println("state is empty")
 	}
 
 	stats := StatsMap{
@@ -124,7 +127,11 @@ func ReturnPlayerStateWithRankings(ownerId string, draftId string) ([]DraftPlaye
 	res := make([]DraftPlayerRanking, 0)
 
 	for _, rank := range userRankings.Ranking {
-		obj := CreateRankingObject(rank, stats.Players[rank.PlayerId], state.Players[rank.PlayerId])
+		stateInfo := state[rank.PlayerId]
+		if stateInfo.PlayerId == "" {
+			panic("This should not be empty")
+		}
+		obj := CreateRankingObject(rank, stats.Players[rank.PlayerId], stateInfo)
 		res = append(res, obj)
 	}
 

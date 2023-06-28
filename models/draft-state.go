@@ -20,7 +20,7 @@ type DraftInfo struct {
 	DraftOrder        []LeagueUser `json:"draftOrder"`
 }
 
-func CreateDraftInfoForDraft(draftId, draftType string, currentUsers []LeagueUser) (*DraftInfo, error) {
+func CreateDraftInfoForDraft(draftId, draftType string, currentUsers []LeagueUser, leagueInfo *League) (*DraftInfo, error) {
 
 	draftOrder := make([]LeagueUser, len(currentUsers))
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -44,6 +44,7 @@ func CreateDraftInfoForDraft(draftId, draftType string, currentUsers []LeagueUse
 
 	res := &DraftInfo{
 		DraftId:           draftId,
+		DisplayName:       leagueInfo.DisplayName,
 		DraftStartTime:    startTime,
 		CurrentDrafter:    draftOrder[0].OwnerId,
 		CurrentPickNumber: 1,
@@ -222,6 +223,10 @@ func (rs *RosterState) Update(draftId string) error {
 	return nil
 }
 
+type Players struct {
+	Players map[string]PlayerStateInfo `json:"players"`
+}
+
 func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 	var leagueInfo League
 	err := utils.Db.ReadDocument("drafts", draftId, &leagueInfo)
@@ -245,7 +250,7 @@ func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 		counts.FilledLeaguesCount++
 	}
 
-	leagueInfo.DisplayName = fmt.Sprintf("League %x", counts.FilledLeaguesCount)
+	leagueInfo.DisplayName = fmt.Sprintf("Draft League %d", counts.FilledLeaguesCount)
 
 	err = utils.Db.CreateOrUpdateDocument("drafts", draftId, &leagueInfo)
 	if err != nil {
@@ -261,7 +266,7 @@ func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 		return fmt.Errorf("there is not 10 users in this league so we can not make a draft state for an unfilled league")
 	}
 
-	info, err := CreateDraftInfoForDraft(draftId, leagueInfo.DraftType, leagueInfo.CurrentUsers)
+	info, err := CreateDraftInfoForDraft(draftId, leagueInfo.DraftType, leagueInfo.CurrentUsers, &leagueInfo)
 	if err != nil {
 		return err
 	}
@@ -269,11 +274,16 @@ func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 		return err
 	}
 
-	playerState, err := GetDefaultPlayerState()
+	data, err := GetDefaultPlayerState()
 	if err != nil {
 		return err
 	}
-	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", playerState)
+	fmt.Println("Data returned from get default player state")
+
+	playerState := Players{
+		Players: data,
+	}
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", &playerState)
 	if err != nil {
 		return err
 	}
