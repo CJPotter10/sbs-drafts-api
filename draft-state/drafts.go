@@ -28,10 +28,12 @@ func (dr *DraftResources) getPlayersMapWithRankings(w http.ResponseWriter, r *ht
 	draftId := chi.URLParam(r, "draftId")
 	if ownerId == "" {
 		http.Error(w, "Did not find an ownerId in this request so we are returning", http.StatusBadRequest)
+		fmt.Println("Did not find an ownerId in this request so we are returning")
 		return
 	}
 	if draftId == "" {
 		http.Error(w, "Did not find an draftId in this request so we are returning", http.StatusBadRequest)
+		fmt.Println("Did not find an draftId in this request so we are returning")
 		return
 	}
 

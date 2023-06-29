@@ -108,10 +108,34 @@ func ReturnDraftSummaryForDraft(draftId string) (*DraftSummary, error) {
 	return &sum, nil
 }
 
-func CreateDraftSummaryForDraft(draftId string) *DraftSummary {
-	return &DraftSummary{
+func CreateDraftSummaryForDraft(draftId string, draftOrder []LeagueUser) *DraftSummary {
+	sum := &DraftSummary{
 		Summary: make([]PlayerStateInfo, 0),
 	}
+
+	pickNum := 1
+
+	for i := 1; i <= 15; i++ {
+		round := i
+		for j := 1; j <= 10; j++ {
+			pickInRound := j
+			var drafter string
+			if round%2 == 0 {
+				drafter = draftOrder[len(draftOrder)-pickInRound].OwnerId
+			} else {
+				drafter = draftOrder[pickInRound-1].OwnerId
+			}
+
+			obj := PlayerStateInfo{
+				PickNum:      pickNum,
+				OwnerAddress: drafter,
+				Round:        round,
+			}
+			sum.Summary = append(sum.Summary, obj)
+			pickNum++
+		}
+	}
+	return sum
 }
 
 func (s *DraftSummary) Update(draftId string) error {
@@ -257,6 +281,23 @@ func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 		return err
 	}
 
+	for i := 0; i < len(leagueInfo.CurrentUsers); i++ {
+		token := DraftToken{
+			Roster: NewEmptyRoster(),
+		}
+		err := utils.Db.ReadDocument("draftTokens", leagueInfo.CurrentUsers[i].TokenId, &token)
+		if err != nil {
+			return err
+		}
+
+		token.LeagueDisplayName = leagueInfo.DisplayName
+		err = utils.Db.CreateOrUpdateDocument("draftTokens", leagueInfo.CurrentUsers[i].TokenId, &token)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Updated display name on card ", leagueInfo.CurrentUsers[i].TokenId)
+	}
+
 	err = utils.Db.CreateOrUpdateDocument("drafts", "draftTracker", counts)
 	if err != nil {
 		return err
@@ -280,15 +321,12 @@ func CreateLeagueDraftStateUponFilling(draftId string, draftType string) error {
 	}
 	fmt.Println("Data returned from get default player state")
 
-	playerState := Players{
-		Players: data,
-	}
-	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", &playerState)
+	err = utils.Db.CreateOrUpdateDocument(fmt.Sprintf("drafts/%s/state", draftId), "playerState", &data)
 	if err != nil {
 		return err
 	}
 
-	summary := CreateDraftSummaryForDraft(draftId)
+	summary := CreateDraftSummaryForDraft(draftId, info.DraftOrder)
 	if err := summary.Update(draftId); err != nil {
 		return err
 	}

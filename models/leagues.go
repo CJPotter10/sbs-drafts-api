@@ -40,8 +40,8 @@ func CreateLeague(ownerId string, draftNum int, draftType string) (*League, erro
 		return nil, err
 	}
 	res := &League{
-		LeagueId:     fmt.Sprintf("%s-draft-%x", draftType, draftNum),
-		DisplayName:  fmt.Sprintf("SBS %s Draft League #%x", draftType, draftNum),
+		LeagueId:     fmt.Sprintf("%s-draft-%d", draftType, draftNum),
+		DisplayName:  fmt.Sprintf("SBS %s Draft League #%d", draftType, draftNum),
 		CurrentUsers: make([]LeagueUser, 0),
 		NumPlayers:   0,
 		MaxPlayers:   10,
@@ -62,7 +62,7 @@ func JoinLeagues(ownerId string, numLeaguesToJoin int, draftType string) ([]Draf
 	}
 
 	if len(data) < numLeaguesToJoin {
-		err := fmt.Errorf("there does not seem to be enough valid draft tokens needed to enter into this number of leagues: You have %x / %x valid tokens", len(data), numLeaguesToJoin)
+		err := fmt.Errorf("there does not seem to be enough valid draft tokens needed to enter into this number of leagues: You have %d / %d valid tokens", len(data), numLeaguesToJoin)
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 
 	// find the right league to add the card to ensuring that this owner does not already have a token in that league
 	for {
-		draftId = fmt.Sprintf("%s-draft-%x", draftType, currentDraftNum)
+		draftId = fmt.Sprintf("%s-draft-%d", draftType, currentDraftNum)
 		err := utils.Db.ReadDocument("drafts", draftId, &l)
 		if err != nil {
 			s := err.Error()
@@ -138,8 +138,9 @@ func AddCardToLeague(token *DraftToken, expectedDraftNum int, draftType string) 
 
 	}
 
-	token.LeagueId = l.DisplayName
+	token.LeagueId = l.LeagueId
 	token.DraftType = draftType
+	token.LeagueDisplayName = l.DisplayName
 
 	l.CurrentUsers = append(l.CurrentUsers, LeagueUser{OwnerId: token.OwnerId, TokenId: token.CardId})
 	l.NumPlayers++

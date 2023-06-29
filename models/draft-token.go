@@ -126,35 +126,35 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 	res := make([]AttributeType, 0)
 	for i := 0; i < len(dt.Roster.QB); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("QB%x", i),
+			Type:  fmt.Sprintf("QB%d", i),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.RB); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("RB%x", i),
+			Type:  fmt.Sprintf("RB%d", i),
 			Value: dt.Roster.RB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.TE); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("TE%x", i),
+			Type:  fmt.Sprintf("TE%d", i),
 			Value: dt.Roster.TE[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.WR); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("WR%x", i),
+			Type:  fmt.Sprintf("WR%d", i),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.DST); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("DST%x", i),
+			Type:  fmt.Sprintf("DST%d", i),
 			Value: dt.Roster.DST[i],
 		}
 		res = append(res, obj)
@@ -173,7 +173,7 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 	res = append(res, weekScoreTrait)
 
 	seasonScoreTrait := AttributeType{
-		Type:  "Season Score",
+		Type:  "SEASON SC0RE",
 		Value: dt.SeasonScore,
 	}
 	res = append(res, seasonScoreTrait)
