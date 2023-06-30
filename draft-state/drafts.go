@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/CJPotter10/sbs-drafts-api/models"
+	"github.com/CJPotter10/sbs-drafts-api/utils"
 	"github.com/go-chi/chi"
 )
 
@@ -19,6 +20,7 @@ func (dr *DraftResources) Routes() chi.Router {
 	r.Get("/{draftId}/state/summary", dr.getDraftSummaryById)
 	r.Get("/{draftId}/state/connectionList", dr.getDraftConnectionList)
 	r.Get("/{draftId}/state/rosters", dr.getRostersMapForDraft)
+	r.Get("/{draftId}/cards/{tokenId}", dr.UpdateTokenMetadata)
 	return r
 }
 
@@ -159,6 +161,45 @@ func (dr *DraftResources) getRostersMapForDraft(w http.ResponseWriter, r *http.R
 	}
 
 	data, err := json.Marshal(rs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (dr *DraftResources) UpdateTokenMetadata(w http.ResponseWriter, r *http.Request) {
+	draftId := chi.URLParam(r, "draftId")
+	if draftId == "" {
+		http.Error(w, "No draft Id was found in the URL", 400)
+		return
+	}
+	tokenId := chi.URLParam(r, "tokenId")
+	if draftId == "" {
+		http.Error(w, "No tokenId was found in the URL", 400)
+		return
+	}
+
+	var token models.DraftToken
+	err := utils.Db.ReadDocument(fmt.Sprintf("drafts/%s/cards", draftId), tokenId, &token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	metadata := token.ConvertToMetadata()
+	// err = utils.Db.CreateOrUpdateDocument("draftTokenMetadata", tokenId, metadata)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	data, err := json.Marshal(metadata)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

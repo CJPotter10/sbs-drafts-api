@@ -126,35 +126,35 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 	res := make([]AttributeType, 0)
 	for i := 0; i < len(dt.Roster.QB); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("QB%d", i),
+			Type:  fmt.Sprintf("QB%d", i+1),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.RB); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("RB%d", i),
+			Type:  fmt.Sprintf("RB%d", i+1),
 			Value: dt.Roster.RB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.TE); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("TE%d", i),
+			Type:  fmt.Sprintf("TE%d", i+1),
 			Value: dt.Roster.TE[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.WR); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("WR%d", i),
+			Type:  fmt.Sprintf("WR%d", i+1),
 			Value: dt.Roster.QB[i],
 		}
 		res = append(res, obj)
 	}
 	for i := 0; i < len(dt.Roster.DST); i++ {
 		obj := AttributeType{
-			Type:  fmt.Sprintf("DST%d", i),
+			Type:  fmt.Sprintf("DST%d", i+1),
 			Value: dt.Roster.DST[i],
 		}
 		res = append(res, obj)
@@ -165,30 +165,35 @@ func CreateTokenAttributes(dt *DraftToken) []AttributeType {
 		Value: dt.Level,
 	}
 	res = append(res, levelTrait)
+	fmt.Println("added level attribute")
 
 	weekScoreTrait := AttributeType{
-		Type:  "WEEK SCORE",
+		Type:  "WEEK-SCORE",
 		Value: dt.WeekScore,
 	}
 	res = append(res, weekScoreTrait)
+	fmt.Println("added week score attribute")
 
 	seasonScoreTrait := AttributeType{
-		Type:  "SEASON SC0RE",
+		Type:  "SEASON-SC0RE",
 		Value: dt.SeasonScore,
 	}
 	res = append(res, seasonScoreTrait)
+	fmt.Println("added season score attribute")
 
 	rankTrait := AttributeType{
 		Type:  "RANK",
 		Value: dt.Rank,
 	}
 	res = append(res, rankTrait)
+	fmt.Println("added rank attribute")
 
 	leagueTrait := AttributeType{
-		Type:  "LEAGUE NAME",
+		Type:  "LEAGUE-NAME",
 		Value: dt.LeagueDisplayName,
 	}
 	res = append(res, leagueTrait)
+	fmt.Println("added league name attribute")
 
 	return res
 }
